@@ -1,4 +1,4 @@
-library nav_service;
+library;
 
 // Core navigation service components
 export 'nav_service/nav_service.dart';
