@@ -1,4 +1,4 @@
-# NavService
+# Advanced Nav Service
 
 A powerful and comprehensive navigation service package for Flutter applications that provides advanced routing, navigation state management, and declarative navigation utilities.
 
@@ -19,7 +19,7 @@ Add this package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  nav_service: ^0.0.1
+  advanced_nav_service: ^0.1.0
 ```
 
 Then run:
@@ -33,7 +33,7 @@ flutter pub get
 ### 1. Define Your Routes
 
 ```dart
-import 'package:nav_service/nav_service.dart';
+import 'package:advanced_nav_service/nav_service.dart';
 
 final routes = [
   NavRoute(

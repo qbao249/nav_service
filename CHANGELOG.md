@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-12-23
 
 ### Added
-- Initial stable release of nav_service package
+- Initial stable release of advanced_nav_service package
 - `NavService` singleton class for advanced navigation management
 - Route configuration with `NavServiceConfig` and `NavRoute` definitions
 - Smart navigation with `navigate()` method that intelligently handles existing routes
