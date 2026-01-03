@@ -20,7 +20,7 @@ Add this package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  advanced_nav_service: ^0.3.1
+  advanced_nav_service: ^0.3.2
 ```
 
 Then run:
@@ -101,7 +101,7 @@ class MyApp extends StatelessWidget {
 }
 ```
 
-### LaunchScreen (handle initial logic)
+### 4. LaunchScreen (handle initial logic)
 
 Use a dedicated LaunchScreen that runs initial checks in initState (authentication, initial push notification, onboarding, etc.) and then redirects with NavService. Keep logic in a single async method called from initState to avoid making initState async.
 
@@ -333,9 +333,9 @@ dependencies:
 ```dart
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   final navigatorKey = GlobalKey<NavigatorState>();
-  
+
   NavService.instance.init(
     NavServiceConfig(
       navigatorKey: navigatorKey,
@@ -353,28 +353,41 @@ void main() async {
       ],
     ),
   );
-  
-  // Initialize app_links integration
-  await _initializeAppLinks();
-  
+
+  // Start the app first so the navigator and NavService are available.
   runApp(MyApp(navigatorKey: navigatorKey));
+
+  // Initialize app_links integration after the first frame.
+  // This ensures `NavService.instance.openUrl(...)` runs only when the
+  // navigator and route observers are ready.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _initializeAppLinks();
+  });
 }
 
 Future<void> _initializeAppLinks() async {
   final appLinks = AppLinks();
-  
+
   // Handle initial link when app is launched
   final initialLink = await appLinks.getInitialLink();
   if (initialLink != null) {
+    // Safe to open URL now that the app has been started
     NavService.instance.openUrl(initialLink.toString());
   }
-  
+
   // Handle incoming links when app is running
   appLinks.uriLinkStream.listen((Uri uri) {
     NavService.instance.openUrl(uri.toString());
   });
 }
+
+// NOTE: If you use a `LaunchScreen` that already handles initial logic
+// (see "LaunchScreen (handle initial logic)" above), prefer handling the
+// initial deep link inside that screen's `_handleInitialLogic()` to avoid
+// duplicate navigation. Use either `LaunchScreen` or `_initializeAppLinks()`
+// for initial link handling — not both.
 ```
+See [LaunchScreen](#4-launchscreen-handle-initial-logic) for more details.
 
 ### Usage
 
