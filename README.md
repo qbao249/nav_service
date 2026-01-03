@@ -106,7 +106,6 @@ class MyApp extends StatelessWidget {
 Use a dedicated LaunchScreen that runs initial checks in initState (authentication, initial push notification, onboarding, etc.) and then redirects with NavService. Keep logic in a single async method called from initState to avoid making initState async.
 
 ```dart
-// filepath: /Volumes/LocalData/Projects/sun-ws/nav_service/README.md
 import 'package:flutter/material.dart';
 import 'package:advanced_nav_service/nav_service.dart';
 
