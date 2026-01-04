@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-01-05
+
+### Added
+- Introduced `PageAware` widget for route-aware lifecycle hooks (see `lib/nav_service/page_aware.dart`).
+- Example updated: `example/scenes/home.dart` now demonstrates `PageAware` usage.
+- Tests updated to cover `PageAware` lifecycle behaviors (`test/nav_service_test.dart`).
+
+### Changed
+- Documentation: README updated and installation snippets bumped to `^0.4.0`.
+
+### Fixed
+- Minor code cleanups and test updates.
+
 ## [0.3.3] - 2026-01-03
 
 ### Added

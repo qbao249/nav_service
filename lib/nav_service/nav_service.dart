@@ -11,6 +11,7 @@ import 'nav_step.dart';
 
 part 'navigator_inheritance_service_ext.dart';
 part 'linking_service_ext.dart';
+part 'page_aware.dart';
 
 class NavServiceConfig {
   const NavServiceConfig({
@@ -60,7 +61,11 @@ class NavService {
   BuildContext? get _currentContext => _navigatorKey?.currentContext;
 
   /// Route observer to monitor navigation events
-  NavigatorObserver get routeObserver => _RouteObserver();
+  /// Use a single instance so `RouteAware` subscriptions register
+  /// against the same observer that is attached to the Navigator.
+  final RouteObserver<PageRoute> _routeObserver = _RouteObserver();
+
+  RouteObserver<PageRoute> get routeObserver => _routeObserver;
 
   bool _enableLogger = true;
 
@@ -607,7 +612,7 @@ class NavService {
   List<NavStep> get navigationHistory => List.unmodifiable(_steps);
 }
 
-class _RouteObserver extends NavigatorObserver {
+class _RouteObserver extends RouteObserver<PageRoute> {
   @override
   void didPush(Route route, Route? previousRoute) {
     super.didPush(route, previousRoute);

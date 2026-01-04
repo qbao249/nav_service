@@ -2,6 +2,8 @@
 
 A powerful navigation service package for Flutter applications that provides advanced routing, navigation state management, and declarative navigation utilities.
 
+Note: Active development for this project will continue under a new package: https://pub.dev/packages/flutter_nav — the `advanced_nav_service` package will still be maintained.
+
 ## Table of Contents
 
 1. [Installation](#1-installation)
@@ -13,6 +15,7 @@ A powerful navigation service package for Flutter applications that provides adv
 7. [Working with Extra Data](#7-working-with-extra-data)
 8. [Navigation History & Debugging](#8-navigation-history--debugging)
 9. [API Reference](#9-api-reference)
+10. [Ultilities](#10-ultilities)
 
 ## 1. Installation
 
@@ -20,7 +23,7 @@ Add this package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  advanced_nav_service: ^0.3.2
+  advanced_nav_service: ^0.4.0
 ```
 
 Then run:
@@ -40,7 +43,7 @@ flutter pub get
 - **🔍 Navigation Debugging**: Built-in logging and navigation history inspection
 - **⚡ Performance Optimized**: Efficient route management with minimal overhead
 - **🔗 Deep Linking Handling**: Complete infrastructure for handling custom URLs with app_links integration, path parameters extraction, and flexible link handlers
-
+- **🧰 Utilities**: Other navigation utilities, make navigation easier and more efficient 
 ## 3. Standalone Setup
 
 ### 1. Define Your Routes
@@ -323,7 +326,7 @@ class SettingsLinkHandler extends NavLinkHandler {
 
 ```yaml
 dependencies:
-  advanced_nav_service: ^0.3.0
+  advanced_nav_service: ^0.4.0
   app_links: ^latest_version
 ```
 
@@ -412,7 +415,7 @@ NavService.instance.openUrl('https://myapp.com/profile/456?source=share');
 
 ```yaml
 dependencies:
-  advanced_nav_service: ^0.3.0
+  advanced_nav_service: ^0.4.0
   go_router: ^latest_version
 ```
 
@@ -601,10 +604,45 @@ Main navigation service singleton.
 - **NavLinkHandler** - Abstract class for defining deep link handlers
 - **NavLinkResult** - Contains matched route path, path parameters, and query parameters
 
+## 10. Ultilities
+
+### PageAware
+
+`PageAware` is a small utility widget that integrates with the package's
+built-in `RouteObserver` to provide easy hooks for common route lifecycle
+events: initialization, disposal, appearance/disappearance, and a callback
+after the first frame (optionally waiting for the route transition to
+complete).
+
+Example usage:
+
+```dart
+PageAware(
+  onInit: () => debugPrint('init'),
+  onAfterFirstFrame: () => debugPrint('after first frame'),
+  onAppear: () => debugPrint('appeared'),
+  onDisappear: () => debugPrint('disappeared'),
+  onDispose: () => debugPrint('disposed'),
+  waitForTransition: true, // optionally wait for route animation
+  child: Scaffold(...),
+)
+```
+
+Notes:
+- **onInit / onDispose**: called during the widget's `initState` and `dispose`.
+- **onAfterFirstFrame**: called after the first frame; if `waitForTransition`
+  is true, the callback waits until the route's push animation completes.
+- **onAppear / onDisappear**: called when this route becomes visible or hidden
+  due to navigation events (uses `RouteAware` hooks).
+
+`PageAware` is convenient for analytics, lazy-loading content when a screen
+becomes visible, or coordinating animations that depend on route transitions.
+
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the BSD-3-Clause License - see the LICENSE file for details.

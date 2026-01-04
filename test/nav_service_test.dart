@@ -32,7 +32,58 @@ void main() {
 
       navService.init(config);
 
-      expect(navService.routeObserver, isA<NavigatorObserver>());
+      group('NavAware', () {
+        testWidgets('calls lifecycle callbacks', (WidgetTester tester) async {
+          final navigatorKey = GlobalKey<NavigatorState>();
+          final navService = NavService.instance;
+
+          var initCalled = false;
+          var afterCalled = false;
+          var disposeCalled = false;
+
+          final routes = [
+            NavRoute(
+              path: '/other',
+              builder: (context, state) => const Scaffold(body: Text('Other')),
+            ),
+          ];
+
+          navService.init(
+            NavServiceConfig(
+              routes: routes,
+              navigatorKey: navigatorKey,
+              enableLogger: false,
+            ),
+          );
+
+          await tester.pumpWidget(
+            MaterialApp(
+              navigatorKey: navigatorKey,
+              navigatorObservers: [navService.routeObserver],
+              home: PageAware(
+                onInit: () => initCalled = true,
+                onAfterFirstFrame: () => afterCalled = true,
+                onDispose: () => disposeCalled = true,
+                child: const Scaffold(body: Text('Home')),
+              ),
+            ),
+          );
+
+          await tester.pumpAndSettle();
+
+          expect(initCalled, isTrue);
+          expect(afterCalled, isTrue);
+          expect(disposeCalled, isFalse);
+
+          // Replace the current route to trigger dispose on the Home route.
+          navService.replace('/other');
+          await tester.pumpAndSettle();
+
+          expect(disposeCalled, isTrue);
+        });
+      });
+
+      // Test helper class
       expect(navService.navigationHistory, isEmpty);
     });
 

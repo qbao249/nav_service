@@ -6,95 +6,105 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home Screen'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info),
-            onPressed: () {
-              _showNavigationInfo(context);
-            },
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Home Screen',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Demonstrates basic navigation operations:',
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
+    return PageAware(
+      onAfterFirstFrame: () => debugPrint('HomeScreen: after first frame'),
+      onAppear: () => debugPrint('HomeScreen: onAppear'),
+      onDisappear: () => debugPrint('HomeScreen: onDisappear'),
+      onDidPush: () => debugPrint('HomeScreen: onDidPush'),
+      onDidPop: () => debugPrint('HomeScreen: onDidPop'),
+      onDispose: () => debugPrint('HomeScreen: onDispose'),
+      onInit: () => debugPrint('HomeScreen: onInit'),
+      waitForTransition: true,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Home Screen'),
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.info),
               onPressed: () {
-                NavService.instance.push('/settings');
+                _showNavigationInfo(context);
               },
-              child: const Text('Push Settings'),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () {
-                NavService.instance.push(
-                  '/profile',
-                  extra: {
-                    'userId': 456,
-                    'name': 'John Doe',
-                    'email': 'john@example.com',
-                  },
-                );
-              },
-              child: const Text('Push Profile with Data'),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () {
-                NavService.instance.pushReplacement('/settings');
-              },
-              child: const Text('Replace with Settings'),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () {
-                NavService.instance.navigate('/profile');
-              },
-              child: const Text('Navigate (Smart Navigation)'),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed:
-                        NavService.instance.canPop()
-                            ? () => NavService.instance.pop()
-                            : null,
-                    child: const Text('Pop'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (NavService.instance.navigationHistory.length > 1) {
-                        NavService.instance.popAll();
-                      }
-                    },
-                    child: const Text('Pop All'),
-                  ),
-                ),
-              ],
             ),
           ],
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Home Screen',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Demonstrates basic navigation operations:',
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  NavService.instance.push('/settings');
+                },
+                child: const Text('Push Settings'),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {
+                  NavService.instance.push(
+                    '/profile',
+                    extra: {
+                      'userId': 456,
+                      'name': 'John Doe',
+                      'email': 'john@example.com',
+                    },
+                  );
+                },
+                child: const Text('Push Profile with Data'),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {
+                  NavService.instance.pushReplacement('/settings');
+                },
+                child: const Text('Replace with Settings'),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {
+                  NavService.instance.navigate('/profile');
+                },
+                child: const Text('Navigate (Smart Navigation)'),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed:
+                          NavService.instance.canPop()
+                              ? () => NavService.instance.pop()
+                              : null,
+                      child: const Text('Pop'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (NavService.instance.navigationHistory.length > 1) {
+                          NavService.instance.popAll();
+                        }
+                      },
+                      child: const Text('Pop All'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

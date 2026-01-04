@@ -1,6 +1,6 @@
 name: advanced_nav_service
 description: A comprehensive navigation service package for Flutter applications providing routing, navigation state management, and navigation utilities.
-version: 0.3.3
+version: 0.4.0
 topics:
   - nav-service
   - navigation
