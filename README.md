@@ -2,7 +2,7 @@
 
 A powerful navigation service package for Flutter applications that provides advanced routing, navigation state management, and declarative navigation utilities.
 
-Note: Active development for this project will continue under a new package: https://pub.dev/packages/flutter_nav — the `advanced_nav_service` package will still be maintained.
+Note: An alternative interface of this project is available at https://pub.dev/packages/flutter_nav
 
 ## Table of Contents
 
@@ -11,11 +11,12 @@ Note: Active development for this project will continue under a new package: htt
 3. [Standalone Setup](#3-standalone-setup)
 4. [Core Navigation](#4-core-navigation)
 5. [Deep Linking](#5-deep-linking)
-6. [GoRouter Integration](#6-gorouter-integration)
-7. [Working with Extra Data](#7-working-with-extra-data)
-8. [Navigation History & Debugging](#8-navigation-history--debugging)
-9. [API Reference](#9-api-reference)
-10. [Ultilities](#10-ultilities)
+6. [Navigation Persistence](#6-navigation-persistence)
+7. [GoRouter Integration](#7-gorouter-integration)
+8. [Working with Extra Data](#8-working-with-extra-data)
+9. [Navigation History & Debugging](#9-navigation-history--debugging)
+10. [API Reference](#10-api-reference)
+11. [Ultilities](#11-ultilities)
 
 ## 1. Installation
 
@@ -23,7 +24,7 @@ Add this package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  advanced_nav_service: ^0.4.0
+  advanced_nav_service: ^0.5.0
 ```
 
 Then run:
@@ -43,6 +44,7 @@ flutter pub get
 - **🔍 Navigation Debugging**: Built-in logging and navigation history inspection
 - **⚡ Performance Optimized**: Efficient route management with minimal overhead
 - **🔗 Deep Linking Handling**: Complete infrastructure for handling custom URLs with app_links integration, path parameters extraction, and flexible link handlers
+- **💾 Navigation Persistence**: Automatic state persistence and restoration with customizable schedules
 - **🧰 Utilities**: Other navigation utilities, make navigation easier and more efficient 
 ## 3. Standalone Setup
 
@@ -98,81 +100,50 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       navigatorKey: navigatorKey,
       navigatorObservers: [NavService.instance.routeObserver],
-      home: const LaunchScreen(),
+      home: const SplashScreen(),
     );
   }
 }
 ```
 
-### 4. LaunchScreen (handle initial logic)
+### 4. Handle App Launch
 
-Use a dedicated LaunchScreen that runs initial checks in initState (authentication, initial push notification, onboarding, etc.) and then redirects with NavService. Keep logic in a single async method called from initState to avoid making initState async.
+Move initialization logic outside of widgets and use the `launched()` method to set initial routes:
 
 ```dart
-import 'package:flutter/material.dart';
-import 'package:advanced_nav_service/nav_service.dart';
-
-class LaunchScreen extends StatefulWidget {
-  const LaunchScreen({super.key});
-
-  @override
-  State<LaunchScreen> createState() => _LaunchScreenState();
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  final navigatorKey = GlobalKey<NavigatorState>();
+  
+  NavService.instance.init(
+    NavServiceConfig(
+      routes: routes,
+      navigatorKey: navigatorKey,
+      enableLogger: true,
+    ),
+  );
+  
+  runApp(MyApp(navigatorKey: navigatorKey));
+  
+  // Handle initial logic after app starts
+  Future.delayed(const Duration(seconds: 2), () async {
+    // Check authentication, deep links, etc.
+    final bool isAuthenticated = await checkAuth();
+    
+    if (isAuthenticated) {
+      NavService.instance.launched([NavRouteInfo(path: '/home')]);
+    } else {
+      NavService.instance.launched([NavRouteInfo(path: '/login')]);
+    }
+  });
 }
 
-class _LaunchScreenState extends State<LaunchScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Defer async work to a helper; run after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _handleInitialLogic();
-    });
-  }
-
-  Future<void> _handleInitialLogic() async {
-    // 1) Check if the user is authenticated
-    final bool isAuthenticated = await _checkAuth();
-    // 2) Check if app was opened from a push notification / deep link
-    // Replace with your push/deep-link SDK fetch (e.g., FirebaseMessaging.getInitialMessage())
-    final Uri? initialDeepLink = await _getInitialDeepLink();
-
-    // Decide target route
-    if (initialDeepLink != null) {
-      // Convert deep link to a route or call NavService.openUrl
-      NavService.instance.openUrl(initialDeepLink.toString());
-      return;
-    }
-
-    if (!isAuthenticated) {
-      // Redirect to login or onboarding
-      NavService.instance.replaceAll([
-        NavRouteInfo(path: '/login', extra: {}), 
-        // ...
-      ]);
-      return;
-    }
-
-    // Default: go to home
-    NavService.instance.pushReplacement('/home');
-  }
-
-  // Dummy implementations - replace with real logic
-  Future<bool> _checkAuth() async {
-    // e.g., await authService.isLoggedIn();
-    await Future.delayed(const Duration(milliseconds: 200));
-    return false; // change to actual auth result
-  }
-
-  Future<Uri?> _getInitialDeepLink() async {
-    // e.g., final message = await FirebaseMessaging.instance.getInitialMessage();
-    // if (message != null) parse message.data or message.link
-    await Future.delayed(const Duration(milliseconds: 50));
-    return null; // return a Uri if the app was opened via push/deep-link
-  }
+class SplashScreen extends StatelessWidget {
+  const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Can define as a plash screen
     return const Scaffold(
       body: Center(child: CircularProgressIndicator()),
     );
@@ -294,7 +265,7 @@ class ProfileLinkHandler extends NavLinkHandler {
   ];
 
   @override
-  void onRedirect(NavLinkResult result) {
+  void onRedirect(BuildContext context, NavLinkResult result) {
     // Handle the deep link navigation
     NavService.instance.navigate('/profile', extra: {
       ...result.pathParameters,  // e.g., {'id': '123'}
@@ -311,7 +282,7 @@ class SettingsLinkHandler extends NavLinkHandler {
   ];
 
   @override
-  void onRedirect(NavLinkResult result) {
+  void onRedirect(BuildContext context, NavLinkResult result) {
     NavService.instance.navigate('/settings', extra: {
       ...result.pathParameters,
       ...result.queryParameters,
@@ -326,7 +297,7 @@ class SettingsLinkHandler extends NavLinkHandler {
 
 ```yaml
 dependencies:
-  advanced_nav_service: ^0.4.0
+  advanced_nav_service: ^0.5.0
   app_links: ^latest_version
 ```
 
@@ -383,13 +354,10 @@ Future<void> _initializeAppLinks() async {
   });
 }
 
-// NOTE: If you use a `LaunchScreen` that already handles initial logic
-// (see "LaunchScreen (handle initial logic)" above), prefer handling the
-// initial deep link inside that screen's `_handleInitialLogic()` to avoid
-// duplicate navigation. Use either `LaunchScreen` or `_initializeAppLinks()`
-// for initial link handling — not both.
+// NOTE: If you handle initial logic in main() (see "Handle App Launch" above),
+// coordinate the initial link handling with your launch logic to avoid
+// duplicate navigation.
 ```
-See [LaunchScreen](#4-launchscreen-handle-initial-logic) for more details.
 
 ### Usage
 
@@ -407,7 +375,109 @@ NavService.instance.openUrl('https://myapp.com/profile/456?source=share');
 - **Custom schemes**: `myapp://`, `yourapp://`
 - **Universal links**: `https://domain.com/`
 
-## 6. GoRouter Integration
+## 6. Navigation Persistence
+
+NavService provides built-in support for persisting and restoring navigation state across app restarts.
+
+### Setup Persistence
+
+First, add a storage dependency (example uses SharedPreferences):
+
+```yaml
+dependencies:
+  advanced_nav_service: ^0.5.0
+  shared_preferences: ^latest_version
+```
+
+Configure persistence with SharedPreferences or any storage mechanism:
+
+```dart
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:advanced_nav_service/nav_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  final navigatorKey = GlobalKey<NavigatorState>();
+  const restorationId = 'app_restoration_id';
+  
+  NavService.instance.init(
+    NavServiceConfig(
+      navigatorKey: navigatorKey,
+      routes: routes,
+      enableLogger: true,
+      persistence: NavPagePersistence(
+        onPersist: (routes) async {
+          final pref = await SharedPreferences.getInstance();
+          await pref.setString(restorationId, jsonEncode(routes));
+        },
+        onRestore: () async {
+          final pref = await SharedPreferences.getInstance();
+          final jsonString = pref.getString(restorationId);
+          if (jsonString != null) {
+            final List<dynamic> data = jsonDecode(jsonString);
+            return List<Map<String, dynamic>>.from(data);
+          }
+          return [];
+        },
+        enableSchedule: true,
+        schedule: const NavPagePersistenceSchedule(immediate: true),
+      ),
+    ),
+  );
+  
+  runApp(MyApp(navigatorKey: navigatorKey));
+  
+  // Launch app with restoration or default routes
+  Future.delayed(const Duration(seconds: 2), () {
+    NavService.instance.launched([NavRouteInfo(path: '/home')]);
+  });
+}
+```
+
+### Persistence Configuration
+
+**NavPagePersistence** properties:
+- `onPersist` - Callback to save navigation state (receives List<Map<String, dynamic>>)
+- `onRestore` - Callback to load navigation state (returns List<Map<String, dynamic>>)
+- `enableSchedule` - Enable automatic persistence on navigation events
+- `schedule` - Configure when to persist (immediate or interval-based)
+
+**NavPagePersistenceSchedule** options:
+- `immediate: true` - Save state immediately on every navigation change
+- `interval: Duration(seconds: 30)` - Save state at regular intervals
+
+### Using launched() Method
+
+Call `launched()` after app initialization to restore previous state or set default routes:
+
+```dart
+// Restore previous state if available, otherwise use default routes
+NavService.instance.launched([NavRouteInfo(path: '/home')]);
+
+// If persisted state exists, it will be restored
+// If no persisted state, the provided routes will be used
+```
+
+### Manual Persistence Control
+
+```dart
+// Manually persist current navigation state
+await NavService.instance.persist();
+
+// Manually restore navigation state
+await NavService.instance.restore();
+```
+
+### Best Practices
+
+- **Serializable Data Only**: Only pass JSON-serializable data in route extras for persistence
+- **Coordinate with Auth**: Check authentication state before restoring routes
+- **Error Handling**: Implement fallback logic in onRestore if data is corrupted
+- **Performance**: Use `immediate: true` for critical apps or `interval` for less frequent saves
+
+## 7. GoRouter Integration
 
 ### Setup
 
@@ -415,7 +485,7 @@ NavService.instance.openUrl('https://myapp.com/profile/456?source=share');
 
 ```yaml
 dependencies:
-  advanced_nav_service: ^0.4.0
+  advanced_nav_service: ^0.5.0
   go_router: ^latest_version
 ```
 
@@ -484,7 +554,7 @@ ElevatedButton(
   - **Use GoRouter for**: Static routes, initial redirects, resetting all routes
   - **Use NavService for**: Dynamic routes, push notifications, unpredictable navigation flows
 
-## 7. Working with Extra Data
+## 8. Working with Extra Data
 
 ### Passing Data
 
@@ -529,7 +599,7 @@ class ProfileScreen extends StatelessWidget {
 }
 ```
 
-## 8. Navigation History & Debugging
+## 9. Navigation History & Debugging
 
 ### Accessing Navigation History
 
@@ -557,7 +627,7 @@ MaterialApp(
 )
 ```
 
-## 9. API Reference
+## 10. API Reference
 
 ### NavService
 
@@ -588,6 +658,11 @@ Main navigation service singleton.
 #### Deep Linking
 - `openUrl(String url)` - Handle deep links via registered link handlers
 
+#### Persistence
+- `launched(List<NavRouteInfo> routes)` - Launch app with restored or default routes
+- `persist()` - Manually persist current navigation state
+- `restore()` - Manually restore navigation state
+
 #### Properties
 - `navigationHistory` - List of navigation steps
 - `joinedLocation` - Current location path
@@ -601,10 +676,12 @@ Main navigation service singleton.
 - **NavStep** - Represents a step in navigation history
 - **NavRouteInfo** - Simple route information for bulk operations
 - **NavServiceConfig** - Configuration object for initializing NavService
-- **NavLinkHandler** - Abstract class for defining deep link handlers
+- **NavLinkHandler** - Abstract class for defining deep link handlers (onRedirect requires BuildContext)
 - **NavLinkResult** - Contains matched route path, path parameters, and query parameters
+- **NavPagePersistence** - Configuration for navigation state persistence
+- **NavPagePersistenceSchedule** - Schedule configuration for persistence timing
 
-## 10. Ultilities
+## 11. Ultilities
 
 ### PageAware
 

@@ -12,6 +12,7 @@ import 'nav_step.dart';
 part 'navigator_inheritance_service_ext.dart';
 part 'linking_service_ext.dart';
 part 'page_aware.dart';
+part 'persistence_service_ext.dart';
 
 class NavServiceConfig {
   const NavServiceConfig({
@@ -20,6 +21,7 @@ class NavServiceConfig {
     this.enableLogger = true,
     this.linkPrefixes,
     this.linkHandlers,
+    this.persistence,
   });
 
   /// List of navigation routes
@@ -36,6 +38,39 @@ class NavServiceConfig {
 
   /// List of link handlers to process specific link patterns.
   final List<NavLinkHandler>? linkHandlers;
+
+  final NavPagePersistence? persistence;
+}
+
+class NavPagePersistence {
+  const NavPagePersistence({
+    required this.onPersist,
+    required this.onRestore,
+    this.enableSchedule = false,
+    this.schedule,
+  });
+
+  /// Whether to enable scheduled persistence.
+  final bool enableSchedule;
+
+  /// Callback to persist the current navigation state.
+  final Future<void> Function(List<Map<String, dynamic>> data) onPersist;
+
+  /// Callback to restore the navigation state.
+  final Future<List<Map<String, dynamic>>> Function() onRestore;
+
+  /// Schedule configuration for persistence.
+  final NavPagePersistenceSchedule? schedule;
+}
+
+class NavPagePersistenceSchedule {
+  const NavPagePersistenceSchedule({this.interval, this.immediate});
+
+  /// Interval duration for scheduled persistence.
+  final Duration? interval;
+
+  /// Whether to perform immediate persistence on route changes.
+  final bool? immediate;
 }
 
 class NavService {
@@ -57,6 +92,9 @@ class NavService {
   final List<String> _linkPrefixes = [];
 
   final List<NavLinkHandler> _linkHandlers = [];
+
+  NavPagePersistence? _persistence;
+  bool _launchedSchedule = false;
 
   BuildContext? get _currentContext => _navigatorKey?.currentContext;
 
@@ -89,6 +127,8 @@ class NavService {
     if (config.linkHandlers != null) {
       _initLinkHandlers(config.linkHandlers!);
     }
+
+    _persistence = config.persistence;
   }
 
   /// context.go():
@@ -141,6 +181,8 @@ class NavService {
       _steps.clear();
     }
 
+    _persistImmediate();
+
     if (_enableLogger) {
       debugPrint('NavService._didPush location: $joinedLocation');
     }
@@ -153,6 +195,9 @@ class NavService {
     if (_steps.isNotEmpty) {
       _steps.removeLast();
     }
+
+    _persistImmediate();
+
     if (_enableLogger) {
       debugPrint('NavService._didPop location: $joinedLocation');
     }
@@ -182,6 +227,9 @@ class NavService {
         }
       }
     }
+
+    _persistImmediate();
+
     if (_enableLogger) {
       debugPrint('NavService._didReplace location: $joinedLocation');
     }
@@ -192,6 +240,9 @@ class NavService {
       // Remove the step that matches the removed route
       _steps.removeWhere((step) => step.currentRoute == oldRoute);
     }
+
+    _persistImmediate();
+
     if (_enableLogger) {
       debugPrint('NavService._didRemove location: $joinedLocation');
     }
@@ -228,9 +279,52 @@ class NavService {
     );
   }
 
+  void _persistImmediate() {
+    final persistence = _persistence;
+    if (persistence == null || !persistence.enableSchedule) return;
+
+    if (!_launchedSchedule) return;
+
+    final immediate = persistence.schedule?.immediate ?? false;
+
+    if (immediate) persist();
+  }
+
+  void _persistInterval() {
+    final persistence = _persistence;
+    if (persistence == null || !persistence.enableSchedule) return;
+
+    final interval = persistence.schedule?.interval;
+    if (interval == null) return;
+
+    Timer.periodic(interval, (timer) {
+      if (!_launchedSchedule) return;
+      persist();
+    });
+  }
+
+  Future<List<NavRouteInfo>> _getRestoredRoutes() async {
+    final persistence = _persistence;
+    if (persistence == null || !persistence.enableSchedule) return [];
+
+    final data = await persistence.onRestore();
+
+    return _validateAndParseRoutes(data);
+  }
+
   //
   // Main navigation methods
   //
+
+  /// Call this method when app is launched to restore
+  /// or set initial routes
+  Future<void> launched(List<NavRouteInfo> routes) async {
+    final restoredRoutes = await _getRestoredRoutes();
+    _launchedSchedule = true;
+    replaceAll(restoredRoutes.isNotEmpty ? restoredRoutes : routes);
+    _persistImmediate();
+    _persistInterval();
+  }
 
   /// If the path exists in the navigation history, navigate back to it.
   /// If not, push a new route.

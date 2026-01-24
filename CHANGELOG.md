@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-01-24
+
+### Added
+- **Navigation Persistence System**: Complete infrastructure for persisting and restoring navigation state
+- **NavPagePersistence**: Configuration class for persistence with `onPersist` and `onRestore` callbacks
+- **NavPagePersistenceSchedule**: Schedule configuration supporting immediate and interval-based persistence
+- **PersistenceServiceExt**: Extension methods for persisting and restoring navigation history
+- **launched() Method**: New method to handle app launch with route restoration or default routes
+- **Automatic State Persistence**: Routes are automatically persisted on navigation events when schedule is enabled
+- **Data Serialization Validation**: Built-in validation to ensure only serializable data is persisted
+- **Restoration Failure Handling**: Graceful fallback behavior when restoration fails
+
+### Changed
+- **NavLinkHandler.onRedirect()**: Now requires `BuildContext` as first parameter for better navigation context
+- **LinkingServiceExt**: Updated to pass BuildContext to link handlers with null-safety checks
+- **Example App**: Updated with SharedPreferences-based persistence implementation
+- **Documentation**: README expanded with persistence section and updated examples
+
+### Enhanced
+- **Route Observers**: All navigation methods now trigger immediate persistence when configured
+- **Navigation History**: Enhanced validation and parsing for restored route data
+- **Error Handling**: Improved error messages and fallback behaviors for persistence operations
+- Link handlers now receive proper BuildContext for navigation operations
+- Better handling of navigation context availability in deep linking
+
+### Tests
+- Added 11 comprehensive persistence test scenarios (state restoration, schedules, data validation, error handling)
+- Fixed test structure by separating PageAware tests into dedicated group
+- Improved navigation and deep linking tests with proper widget test setup
+- Total: 29 passing tests covering navigation, persistence, deep linking, and lifecycle management
+
+### Fixed
+- Test structure issues with nested group() calls
+- Deep linking tests now properly handle BuildContext requirements
+- Navigation tests work correctly with actual navigation flow
+
 ## [0.4.0] - 2026-01-05
 
 ### Added

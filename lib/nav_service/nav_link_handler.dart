@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 import 'nav_link_result.dart';
 
 /// This class extends [NavLinkHandler] and defines the paths that should
@@ -8,5 +10,5 @@ import 'nav_link_result.dart';
 abstract class NavLinkHandler {
   List<String> get redirectPaths;
 
-  void onRedirect(NavLinkResult result);
+  void onRedirect(BuildContext context, NavLinkResult result);
 }

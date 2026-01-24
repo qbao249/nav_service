@@ -105,7 +105,16 @@ extension LinkingServiceExt on NavService {
             pathParameters: pathParameters,
             queryParameters: queryParameters,
           );
-          linkHandler.onRedirect(result);
+          if (_currentContext == null) {
+            if (_enableLogger) {
+              debugPrint(
+                'LinkingService._linking: Navigator context is null, '
+                'cannot perform navigation for path: $path',
+              );
+            }
+          } else {
+            linkHandler.onRedirect(_currentContext!, result);
+          }
         }
       }
     }

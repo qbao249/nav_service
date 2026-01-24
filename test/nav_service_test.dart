@@ -32,59 +32,69 @@ void main() {
 
       navService.init(config);
 
-      group('NavAware', () {
-        testWidgets('calls lifecycle callbacks', (WidgetTester tester) async {
-          final navigatorKey = GlobalKey<NavigatorState>();
-          final navService = NavService.instance;
-
-          var initCalled = false;
-          var afterCalled = false;
-          var disposeCalled = false;
-
-          final routes = [
-            NavRoute(
-              path: '/other',
-              builder: (context, state) => const Scaffold(body: Text('Other')),
-            ),
-          ];
-
-          navService.init(
-            NavServiceConfig(
-              routes: routes,
-              navigatorKey: navigatorKey,
-              enableLogger: false,
-            ),
-          );
-
-          await tester.pumpWidget(
-            MaterialApp(
-              navigatorKey: navigatorKey,
-              navigatorObservers: [navService.routeObserver],
-              home: PageAware(
-                onInit: () => initCalled = true,
-                onAfterFirstFrame: () => afterCalled = true,
-                onDispose: () => disposeCalled = true,
-                child: const Scaffold(body: Text('Home')),
-              ),
-            ),
-          );
-
-          await tester.pumpAndSettle();
-
-          expect(initCalled, isTrue);
-          expect(afterCalled, isTrue);
-          expect(disposeCalled, isFalse);
-
-          // Replace the current route to trigger dispose on the Home route.
-          navService.replace('/other');
-          await tester.pumpAndSettle();
-
-          expect(disposeCalled, isTrue);
-        });
-      });
-
       // Test helper class
       expect(navService.navigationHistory, isEmpty);
+    });
+  });
+
+  group('PageAware', () {
+    testWidgets('calls lifecycle callbacks', (WidgetTester tester) async {
+      final navigatorKey = GlobalKey<NavigatorState>();
+      final navService = NavService.instance;
+
+      var initCalled = false;
+      var afterCalled = false;
+      var disposeCalled = false;
+
+      final routes = [
+        NavRoute(
+          path: '/other',
+          builder: (context, state) => const Scaffold(body: Text('Other')),
+        ),
+      ];
+
+      navService.init(
+        NavServiceConfig(
+          routes: routes,
+          navigatorKey: navigatorKey,
+          enableLogger: false,
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: [navService.routeObserver],
+          home: PageAware(
+            onInit: () => initCalled = true,
+            onAfterFirstFrame: () => afterCalled = true,
+            onDispose: () => disposeCalled = true,
+            child: const Scaffold(body: Text('Home')),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(initCalled, isTrue);
+      expect(afterCalled, isTrue);
+      expect(disposeCalled, isFalse);
+
+      // Replace the current route to trigger dispose on the Home route.
+      navService.replace('/other');
+      await tester.pumpAndSettle();
+
+      expect(disposeCalled, isTrue);
+    });
+  });
+
+  group('NavService Navigation', () {
+    late NavService navService;
+    late GlobalKey<NavigatorState> navigatorKey;
+
+    setUp(() {
+      navService = NavService.instance;
+      navigatorKey = GlobalKey<NavigatorState>();
     });
 
     testWidgets('should navigate between routes', (WidgetTester tester) async {
@@ -111,33 +121,17 @@ void main() {
         MaterialApp(
           navigatorKey: navigatorKey,
           navigatorObservers: [navService.routeObserver],
-          home: Builder(
-            builder:
-                (context) => Scaffold(
-                  body: Column(
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => navService.push('/home'),
-                        child: const Text('Go Home'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => navService.push('/settings'),
-                        child: const Text('Go Settings'),
-                      ),
-                    ],
-                  ),
-                ),
-          ),
+          home: const Scaffold(body: Text('Initial')),
         ),
       );
 
       // Test navigation to home
-      await tester.tap(find.text('Go Home'));
+      navService.push('/home');
       await tester.pumpAndSettle();
       expect(find.text('Home'), findsOneWidget);
 
       // Test navigation to settings
-      await tester.tap(find.text('Go Settings'));
+      navService.push('/settings');
       await tester.pumpAndSettle();
       expect(find.text('Settings'), findsOneWidget);
 
@@ -221,43 +215,23 @@ void main() {
         MaterialApp(
           navigatorKey: navigatorKey,
           navigatorObservers: [navService.routeObserver],
-          home: Builder(
-            builder:
-                (context) => Scaffold(
-                  body: Column(
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => navService.push('/first'),
-                        child: const Text('Push First'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => navService.push('/second'),
-                        child: const Text('Push Second'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => navService.pop(),
-                        child: const Text('Pop'),
-                      ),
-                    ],
-                  ),
-                ),
-          ),
+          home: const Scaffold(body: Text('Initial')),
         ),
       );
 
       // Push first route
-      await tester.tap(find.text('Push First'));
+      navService.push('/first');
       await tester.pumpAndSettle();
       expect(navService.navigationHistory.length, equals(1));
 
       // Push second route
-      await tester.tap(find.text('Push Second'));
+      navService.push('/second');
       await tester.pumpAndSettle();
       expect(navService.navigationHistory.length, equals(2));
 
       // Pop
       expect(navService.canPop(), isTrue);
-      await tester.tap(find.text('Pop'));
+      navService.pop();
       await tester.pumpAndSettle();
 
       expect(find.text('First'), findsOneWidget);
@@ -291,34 +265,17 @@ void main() {
         MaterialApp(
           navigatorKey: navigatorKey,
           navigatorObservers: [navService.routeObserver],
-          home: Builder(
-            builder:
-                (context) => Scaffold(
-                  body: Column(
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => navService.push('/original'),
-                        child: const Text('Push Original'),
-                      ),
-                      ElevatedButton(
-                        onPressed:
-                            () => navService.pushReplacement('/replacement'),
-                        child: const Text('Replace'),
-                      ),
-                    ],
-                  ),
-                ),
-          ),
+          home: const Scaffold(body: Text('Initial')),
         ),
       );
 
       // Push original route
-      await tester.tap(find.text('Push Original'));
+      navService.push('/original');
       await tester.pumpAndSettle();
       expect(find.text('Original'), findsOneWidget);
 
       // Replace with new route
-      await tester.tap(find.text('Replace'));
+      navService.pushReplacement('/replacement');
       await tester.pumpAndSettle();
       expect(find.text('Replacement'), findsOneWidget);
       expect(find.text('Original'), findsNothing);
@@ -407,7 +364,9 @@ void main() {
       expect(() => navService.init(config), returnsNormally);
     });
 
-    test('should handle URL with scheme prefix', () {
+    testWidgets('should handle URL with scheme prefix', (
+      WidgetTester tester,
+    ) async {
       final routes = [
         NavRoute(path: '/home', builder: (context, state) => Container()),
       ];
@@ -422,6 +381,14 @@ void main() {
         ),
       );
 
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: [navService.routeObserver],
+          home: const Scaffold(body: Text('Home')),
+        ),
+      );
+
       navService.openUrl('myapp://product/123?category=electronics');
 
       expect(testHandler.lastResult?.matchedRoutePath, equals('/product/:id'));
@@ -432,7 +399,9 @@ void main() {
       );
     });
 
-    test('should handle URL with domain prefix', () {
+    testWidgets('should handle URL with domain prefix', (
+      WidgetTester tester,
+    ) async {
       final routes = [
         NavRoute(path: '/home', builder: (context, state) => Container()),
       ];
@@ -447,6 +416,14 @@ void main() {
         ),
       );
 
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: [navService.routeObserver],
+          home: const Scaffold(body: Text('Home')),
+        ),
+      );
+
       navService.openUrl('https://myapp.com/user/profile?tab=settings');
 
       expect(testHandler.lastResult?.matchedRoutePath, equals('/user/profile'));
@@ -457,7 +434,9 @@ void main() {
       );
     });
 
-    test('should extract path parameters correctly', () {
+    testWidgets('should extract path parameters correctly', (
+      WidgetTester tester,
+    ) async {
       final routes = [
         NavRoute(path: '/home', builder: (context, state) => Container()),
       ];
@@ -469,6 +448,14 @@ void main() {
           enableLogger: false,
           linkPrefixes: ['myapp://'],
           linkHandlers: [testHandler],
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: [navService.routeObserver],
+          home: const Scaffold(body: Text('Home')),
         ),
       );
 
@@ -538,6 +525,425 @@ void main() {
       expect(result.queryParameters, equals({'tab': 'details'}));
     });
   });
+
+  group('Navigation Persistence', () {
+    late NavService navService;
+    late GlobalKey<NavigatorState> navigatorKey;
+    List<Map<String, dynamic>>? persistedData;
+
+    setUp(() {
+      navService = NavService.instance;
+      navigatorKey = GlobalKey<NavigatorState>();
+      persistedData = null;
+    });
+
+    testWidgets('should persist navigation state', (WidgetTester tester) async {
+      final routes = [
+        NavRoute(
+          path: '/home',
+          builder: (context, state) => const Scaffold(body: Text('Home')),
+        ),
+        NavRoute(
+          path: '/profile',
+          builder: (context, state) => const Scaffold(body: Text('Profile')),
+        ),
+      ];
+
+      navService.init(
+        NavServiceConfig(
+          routes: routes,
+          navigatorKey: navigatorKey,
+          enableLogger: false,
+          persistence: NavPagePersistence(
+            onPersist: (data) async {
+              persistedData = data;
+            },
+            onRestore: () async => [],
+            enableSchedule: true,
+            schedule: const NavPagePersistenceSchedule(immediate: true),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: [navService.routeObserver],
+          home: const Scaffold(body: Text('Root')),
+        ),
+      );
+
+      // Launch with initial route
+      navService.launched([NavRouteInfo(path: '/home')]);
+      await tester.pumpAndSettle();
+
+      // Verify persistence was called
+      expect(persistedData, isNotNull);
+      expect(persistedData!.length, equals(1));
+      expect(persistedData![0]['path'], equals('/home'));
+    });
+
+    testWidgets('should restore navigation state', (WidgetTester tester) async {
+      final routes = [
+        NavRoute(
+          path: '/home',
+          builder: (context, state) => const Scaffold(body: Text('Home')),
+        ),
+        NavRoute(
+          path: '/profile',
+          builder: (context, state) => const Scaffold(body: Text('Profile')),
+        ),
+        NavRoute(
+          path: '/settings',
+          builder: (context, state) => const Scaffold(body: Text('Settings')),
+        ),
+      ];
+
+      // Mock persisted data
+      final mockPersistedData = [
+        {'path': '/home'},
+        {
+          'path': '/profile',
+          'extra': {'userId': 123},
+        },
+        {'path': '/settings'},
+      ];
+
+      navService.init(
+        NavServiceConfig(
+          routes: routes,
+          navigatorKey: navigatorKey,
+          enableLogger: false,
+          persistence: NavPagePersistence(
+            onPersist: (data) async {
+              persistedData = data;
+            },
+            onRestore: () async => mockPersistedData,
+            enableSchedule: true,
+            schedule: const NavPagePersistenceSchedule(immediate: true),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: [navService.routeObserver],
+          home: const Scaffold(body: Text('Root')),
+        ),
+      );
+
+      // Launch should restore persisted routes
+      navService.launched([NavRouteInfo(path: '/default')]);
+      await tester.pumpAndSettle();
+
+      // Verify restored routes
+      expect(navService.navigationHistory.length, equals(3));
+      expect(navService.navigationHistory[0].path, equals('/home'));
+      expect(navService.navigationHistory[1].path, equals('/profile'));
+      expect(navService.navigationHistory[2].path, equals('/settings'));
+    });
+
+    testWidgets('should use default routes when no persisted data', (
+      WidgetTester tester,
+    ) async {
+      final routes = [
+        NavRoute(
+          path: '/home',
+          builder: (context, state) => const Scaffold(body: Text('Home')),
+        ),
+        NavRoute(
+          path: '/default',
+          builder: (context, state) => const Scaffold(body: Text('Default')),
+        ),
+      ];
+
+      navService.init(
+        NavServiceConfig(
+          routes: routes,
+          navigatorKey: navigatorKey,
+          enableLogger: false,
+          persistence: NavPagePersistence(
+            onPersist: (data) async {
+              persistedData = data;
+            },
+            onRestore: () async => [], // No persisted data
+            enableSchedule: true,
+            schedule: const NavPagePersistenceSchedule(immediate: true),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: [navService.routeObserver],
+          home: const Scaffold(body: Text('Root')),
+        ),
+      );
+
+      // Launch with default route
+      navService.launched([NavRouteInfo(path: '/default')]);
+      await tester.pumpAndSettle();
+
+      // Verify default route is used
+      expect(navService.navigationHistory.length, equals(1));
+      expect(navService.navigationHistory[0].path, equals('/default'));
+    });
+
+    testWidgets('should persist with extra data', (WidgetTester tester) async {
+      final routes = [
+        NavRoute(
+          path: '/profile',
+          builder: (context, state) => const Scaffold(body: Text('Profile')),
+        ),
+      ];
+
+      navService.init(
+        NavServiceConfig(
+          routes: routes,
+          navigatorKey: navigatorKey,
+          enableLogger: false,
+          persistence: NavPagePersistence(
+            onPersist: (data) async {
+              persistedData = data;
+            },
+            onRestore: () async => [],
+            enableSchedule: true,
+            schedule: const NavPagePersistenceSchedule(immediate: true),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: [navService.routeObserver],
+          home: const Scaffold(body: Text('Root')),
+        ),
+      );
+
+      // Launch with extra data
+      navService.launched([
+        NavRouteInfo(
+          path: '/profile',
+          extra: {'userId': 456, 'name': 'John Doe'},
+        ),
+      ]);
+      await tester.pumpAndSettle();
+
+      // Verify persisted data includes extra
+      expect(persistedData, isNotNull);
+      expect(persistedData!.length, equals(1));
+      expect(persistedData![0]['path'], equals('/profile'));
+      expect(persistedData![0]['extra'], isNotNull);
+      expect(persistedData![0]['extra']['userId'], equals(456));
+      expect(persistedData![0]['extra']['name'], equals('John Doe'));
+    });
+
+    testWidgets('should persist on navigation events with immediate schedule', (
+      WidgetTester tester,
+    ) async {
+      final routes = [
+        NavRoute(
+          path: '/home',
+          builder: (context, state) => const Scaffold(body: Text('Home')),
+        ),
+        NavRoute(
+          path: '/profile',
+          builder: (context, state) => const Scaffold(body: Text('Profile')),
+        ),
+      ];
+
+      int persistCallCount = 0;
+
+      navService.init(
+        NavServiceConfig(
+          routes: routes,
+          navigatorKey: navigatorKey,
+          enableLogger: false,
+          persistence: NavPagePersistence(
+            onPersist: (data) async {
+              persistCallCount++;
+              persistedData = data;
+            },
+            onRestore: () async => [],
+            enableSchedule: true,
+            schedule: const NavPagePersistenceSchedule(immediate: true),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: [navService.routeObserver],
+          home: const Scaffold(body: Text('Root')),
+        ),
+      );
+
+      // Launch
+      navService.launched([NavRouteInfo(path: '/home')]);
+      await tester.pumpAndSettle();
+      final launchCallCount = persistCallCount;
+
+      // Push another route
+      navService.push('/profile');
+      await tester.pumpAndSettle();
+
+      // Verify persistence was called again
+      expect(persistCallCount, greaterThan(launchCallCount));
+      expect(persistedData!.length, equals(2));
+    });
+
+    testWidgets('should not persist when schedule is disabled', (
+      WidgetTester tester,
+    ) async {
+      final routes = [
+        NavRoute(
+          path: '/home',
+          builder: (context, state) => const Scaffold(body: Text('Home')),
+        ),
+      ];
+
+      int persistCallCount = 0;
+
+      navService.init(
+        NavServiceConfig(
+          routes: routes,
+          navigatorKey: navigatorKey,
+          enableLogger: false,
+          persistence: NavPagePersistence(
+            onPersist: (data) async {
+              persistCallCount++;
+              persistedData = data;
+            },
+            onRestore: () async => [],
+            enableSchedule: false, // Disabled
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: [navService.routeObserver],
+          home: const Scaffold(body: Text('Root')),
+        ),
+      );
+
+      // Push route
+      navService.push('/home');
+      await tester.pumpAndSettle();
+
+      // Verify persistence was not called automatically
+      expect(persistCallCount, equals(0));
+    });
+
+    test('should manually persist navigation state', () async {
+      final routes = [
+        NavRoute(path: '/home', builder: (context, state) => Container()),
+      ];
+
+      navService.init(
+        NavServiceConfig(
+          routes: routes,
+          navigatorKey: navigatorKey,
+          enableLogger: false,
+          persistence: NavPagePersistence(
+            onPersist: (data) async {
+              persistedData = data;
+            },
+            onRestore: () async => [],
+          ),
+        ),
+      );
+
+      // Manually call persist
+      await navService.persist();
+
+      // Verify onPersist was called
+      expect(persistedData, isNotNull);
+    });
+
+    test('should handle invalid persisted data gracefully', () async {
+      final routes = [
+        NavRoute(path: '/home', builder: (context, state) => Container()),
+        NavRoute(path: '/default', builder: (context, state) => Container()),
+      ];
+
+      // Invalid persisted data
+      final invalidData = [
+        {'invalid': 'data'},
+        {'path': null},
+        {'path': 123}, // Non-string path
+      ];
+
+      navService.init(
+        NavServiceConfig(
+          routes: routes,
+          navigatorKey: navigatorKey,
+          enableLogger: false,
+          persistence: NavPagePersistence(
+            onPersist: (data) async {
+              persistedData = data;
+            },
+            onRestore: () async => invalidData,
+            enableSchedule: true,
+          ),
+        ),
+      );
+
+      // Should not throw, but return empty or handle gracefully
+      expect(
+        () => navService.launched([NavRouteInfo(path: '/default')]),
+        returnsNormally,
+      );
+    });
+
+    test('should validate serializable data before persisting', () {
+      final routes = [
+        NavRoute(path: '/home', builder: (context, state) => Container()),
+      ];
+
+      navService.init(
+        NavServiceConfig(
+          routes: routes,
+          navigatorKey: navigatorKey,
+          enableLogger: false,
+          persistence: NavPagePersistence(
+            onPersist: (data) async {
+              persistedData = data;
+            },
+            onRestore: () async => [],
+          ),
+        ),
+      );
+
+      // Test persistBase with serializable data
+      final result = navService.persistBase();
+      expect(result, isA<List<Map<String, dynamic>>>());
+    });
+
+    test('NavPagePersistence configuration', () {
+      final persistence = NavPagePersistence(
+        onPersist: (data) async {},
+        onRestore: () async => [],
+        enableSchedule: true,
+        schedule: const NavPagePersistenceSchedule(
+          immediate: true,
+          interval: Duration(seconds: 30),
+        ),
+      );
+
+      expect(persistence.enableSchedule, isTrue);
+      expect(persistence.schedule?.immediate, isTrue);
+      expect(
+        persistence.schedule?.interval,
+        equals(const Duration(seconds: 30)),
+      );
+    });
+  });
 }
 
 // Test helper class
@@ -552,7 +958,7 @@ class TestNavLinkHandler extends NavLinkHandler {
   ];
 
   @override
-  void onRedirect(NavLinkResult result) {
+  void onRedirect(BuildContext context, NavLinkResult result) {
     lastResult = result;
   }
 

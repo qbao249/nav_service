@@ -10,7 +10,7 @@ class ProfileLinkHandler extends NavLinkHandler {
   ];
 
   @override
-  void onRedirect(NavLinkResult result) {
+  void onRedirect(BuildContext context, NavLinkResult result) {
     // Handle any additional logic on redirect if needed
     debugPrint(
       'Redirected to Profile with result: matchedPath=${result.matchedRoutePath}, '

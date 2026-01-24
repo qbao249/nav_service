@@ -10,7 +10,7 @@ class SettingsLinkHandler extends NavLinkHandler {
   ];
 
   @override
-  void onRedirect(NavLinkResult result) {
+  void onRedirect(BuildContext context, NavLinkResult result) {
     debugPrint(
       'Redirected to Settings with result: matchedPath=${result.matchedRoutePath}, '
       'pathParameters=${result.pathParameters}, '
